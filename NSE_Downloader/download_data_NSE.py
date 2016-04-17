@@ -1,3 +1,9 @@
+import os
+import pandas
+from datetime import datetime, timedelta
+import requests
+from BeautifulSoup import BeautifulSoup
+
 ##############################################################################
 
 def get_NSE_data(symbol, start_date, end_date):
