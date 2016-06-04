@@ -95,8 +95,8 @@ def basics(inputDataSeries):
     return {
             'mean' : inputDataSeries.mean(), \
             'stdev' : inputDataSeries.std(), \
-            'skew' : inputDataSeries.skew(), \
-            'kurt' : inputDataSeries.kurt()
+            'skewness' : inputDataSeries.skew(), \
+            'kurtosis' : inputDataSeries.kurt()
     }
     
 
@@ -108,4 +108,40 @@ plt.plot(a['2015':'2016']['Simple_Returns'])
 
 stats = basics(a['2015':'2016']['Simple_Returns'])
 
-d
+def get_acf(inputDataSeries, lag = 15):
+    # Copy the data in input data
+    outputData = pandas.DataFrame(inputDataSeries)
+    
+    if min(inputDataSeries.index) == inputDataSeries.index[0]:
+        # Ascending
+        multiplier = 1
+        lag = multiplier*lag
+    elif max(inputDataSeries.index) == inputDataSeries.index[0]:
+        # Descending
+        multiplier = -1
+        lag = multiplier*lag
+    else:
+        print('Cannot determine the order put the lag value manually')
+        print('Syntax: calc_returns(inputData, columnName, lag = lag_value)')
+    
+    n_iter = lag
+    columnName = outputData.columns[0]
+    i = 1
+    
+    acf_values = []
+    
+    while i <= abs(n_iter):
+        col_name = 'lag_' + str(i)
+        outputData[col_name] = ''
+        outputData[col_name] = outputData[columnName].shift(multiplier*i)
+        
+        i += 1
+        
+        acf_values.append()
+        
+        
+        
+    return outputData
+
+
+b = get_acf(a['2015':'2016']['Simple_Returns'])
