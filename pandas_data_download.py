@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function
 import pandas
@@ -6,11 +7,14 @@ import numpy
 from scipy.stats import gaussian_kde as kde
 import datetime
 import matplotlib.pyplot as plt
+from statsmodels.tsa.stattools import acf, pacf
+import statsmodels.formula.api as smf
 
-start = datetime.datetime(2005,01,01)
-end = datetime.datetime(2016,05,26)
 
-f = web.DataReader('ICICIBANK.BO', 'yahoo', start, end)
+# Function to download data 
+def get_data(stock, source, start, end):
+    return web.DataReader(stock, source, start, end)
+
 
 # Function to get the kernel density estimate of distribution
 def build_kde(inputData, columnName):
@@ -100,14 +104,7 @@ def basics(inputDataSeries):
     }
     
 
-a = calc_returns(f, 'Close')
-x_simple, y_simple = build_kde(a['2015':'2016'], 'Simple_Returns')
-x_log, y_log = build_kde(a['2015':'2016'], 'Log_Returns')
-
-plt.plot(a['2015':'2016']['Simple_Returns'])
-
-stats = basics(a['2015':'2016']['Simple_Returns'])
-
+# Calculate acf and pacf
 def get_acf(inputDataSeries, lag = 15):
     # Copy the data in input data
     outputData = pandas.DataFrame(inputDataSeries)
@@ -128,7 +125,10 @@ def get_acf(inputDataSeries, lag = 15):
     columnName = outputData.columns[0]
     i = 1
     
+    
+    # Calculate ACF
     acf_values = []
+    acf_values.append(outputData[columnName].corr(outputData[columnName]))
     
     while i <= abs(n_iter):
         col_name = 'lag_' + str(i)
@@ -137,11 +137,65 @@ def get_acf(inputDataSeries, lag = 15):
         
         i += 1
         
-        acf_values.append()
+        acf_values.append(outputData[columnName].corr(outputData[col_name]))
+    
+    # Define an emplty figure
+    fig = plt.figure()
+    
+    # Define 2 subplots
+    ax1 = fig.add_subplot(211) # 2 by 1 by 1 - 1st plot in 2 plots
+    ax2 = fig.add_subplot(212) # 2 by 1 by 2 - 2nd plot in 2 plots
+    
+    ax1.plot(range(len(acf_values)), acf(inputDataSeries, nlags = n_iter), \
+             range(len(acf_values)), acf_values, 'ro')
+    ax2.plot(range(len(acf_values)), pacf(inputDataSeries, nlags = n_iter), 'g*-')
+    
+    # Plot horizontal lines    
+    ax1.axhline(y = 0.0, color = 'black')
+    ax2.axhline(y = 0.0, color = 'black')
         
-        
-        
-    return outputData
+    # Axis labels    
+    plt.xlabel = 'Lags'
+    plt.ylabel = 'Correlation Coefficient'
+    return outputData, {'acf' : list(acf_values), \
+                        'pacf': pacf(inputDataSeries, nlags = n_iter)} 
 
 
-b = get_acf(a['2015':'2016']['Simple_Returns'])
+# Calculate CDF for given data
+def calc_cdf(inputDataSeries):
+    
+    sortedData = inputDataSeries.sort_values(ascending = True)
+    n = len(sortedData)    
+    
+    cdf = []
+    i = 1
+    
+    for item in sortedData:
+        cdf.append(i/n)
+        i += 1
+    
+    plt.plot(sortedData, cdf)    
+    return pandas.DataFrame({'Return' : sortedData, 'CDF' : cdf})
+
+
+
+
+a = get_data(stock = 'ICICIBANK.BO', source = 'yahoo', \
+             start = datetime.datetime(2005,01,01), \
+             end = datetime.datetime(2016,07,17))
+
+
+
+b = calc_returns(a, 'Close')
+c, d = get_acf(b['2015':'2016']['Simple_Returns'], lag = 25)
+stats = basics(b['2015':'2016']['Simple_Returns'])
+
+x_simple, y_simple = build_kde(b['2015':'2016'], 'Simple_Returns')
+x_log, y_log = build_kde(b['2015':'2016'], 'Log_Returns')
+
+plt.plot(b['2015':'2016']['Simple_Returns'])
+
+
+calc_cdf(b['2015':'2016']['Simple_Returns'])
+
+
