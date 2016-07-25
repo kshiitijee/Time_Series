@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function
 import pandas
@@ -10,53 +9,62 @@ import matplotlib.pyplot as plt
 from statsmodels.tsa.stattools import acf, pacf
 import statsmodels.formula.api as smf
 
-
-# Function to download data 
-def get_data(stock, source, start, end):
-    return web.DataReader(stock, source, start, end)
-
-
-# Function to get the kernel density estimate of distribution
-def build_kde(inputData, columnName):
+class stock:
     
-    if len(inputData) < 5:
-        print("Please input atleast 5 data points")
-        return
+    # Initialize and download the data
+    def __init__(self, scrip  = None, source = None, 
+                       from_date = None, to_date = None):
+        self.scrip = scrip
+        self.source = source
+        self.from_date = datetime.datetime.strptime(from_date, '%Y-%m-%d')
+        self.to_date = datetime.datetime.strptime(to_date, '%Y-%m-%d')
+        self.stock_data = web.DataReader(self.scrip, self.source, self.from_date, self.to_date)
+
+
+ICICI = stock('ICICIBANK.BO', 'yahoo', '2005-01-01', '2016-07-25')
+
+
+    # Function to get the kernel density estimate of distribution
+    def build_kde(self, inputData, columnName):
+    
+        if len(inputData) < 5:
+            print("Please input atleast 5 data points")
+            return
         
-    # Get number of data points to be plotted        
-    num_div = max(5, int(len(inputData)/10))
+        # Get number of data points to be plotted        
+        num_div = max(5, int(len(inputData)/10))
+        
+        # Generate the plot range
+        plot_range = numpy.linspace(max(inputData[columnName]), \
+                                    min(inputData[columnName]), \
+                                    num = num_div)
+        # Generating the kde function
+        kde_function = kde(inputData[columnName])
+        
+        # Plotting the KDE and histogram simultaneously
+        # ----------------------------------------------
     
-    # Generate the plot range
-    plot_range = numpy.linspace(max(inputData[columnName]), \
-                                min(inputData[columnName]), \
-                                num = num_div)
-    # Generating the kde function
-    kde_function = kde(inputData[columnName])
+        # Initializing the plot
+        fig, ax1 = plt.subplots()
     
-    # Plotting the KDE and histogram simultaneously
-    # ----------------------------------------------
-
-    # Initializing the plot
-    fig, ax1 = plt.subplots()
-
-    # Plot secondary y-axis
-    inputData[columnName].hist(bins = num_div)
-
-
-    # Create secondary y-axis
-    ax2 = ax1.twinx()
+        # Plot secondary y-axis
+        inputData[columnName].hist(bins = num_div)
     
-    # Plot the graph on primary x-axis
-    ax1.plot(plot_range, kde_function(plot_range), 'r-', \
-             plot_range, kde_function(plot_range), 'ko')
     
-
-    # Labeling the axis
-    ax1.set_xlabel('Returns')
-    ax1.set_ylabel('KDE', color='g')
-    ax2.set_ylabel('Frequency', color='b')
-
-    return plot_range, kde_function
+        # Create secondary y-axis
+        ax2 = ax1.twinx()
+        
+        # Plot the graph on primary x-axis
+        ax1.plot(plot_range, kde_function(plot_range), 'r-', \
+                 plot_range, kde_function(plot_range), 'ko')
+        
+    
+        # Labeling the axis
+        ax1.set_xlabel('Returns')
+        ax1.set_ylabel('KDE', color='g')
+        ax2.set_ylabel('Frequency', color='b')
+    
+        return plot_range, kde_function
 
 
 # Function to calculate returns
@@ -105,7 +113,7 @@ def basics(inputDataSeries):
     
 
 # Calculate acf and pacf
-def get_acf(inputDataSeries, lag = 15):
+def get_acf_pacf(inputDataSeries, lag = 15):
     # Copy the data in input data
     outputData = pandas.DataFrame(inputDataSeries)
     
@@ -187,7 +195,7 @@ a = get_data(stock = 'ICICIBANK.BO', source = 'yahoo', \
 
 
 b = calc_returns(a, 'Close')
-c, d = get_acf(b['2015':'2016']['Simple_Returns'], lag = 25)
+c, d = get_acf_pacf(b['2015':'2016']['Simple_Returns'], lag = 25)
 stats = basics(b['2015':'2016']['Simple_Returns'])
 
 x_simple, y_simple = build_kde(b['2015':'2016'], 'Simple_Returns')
