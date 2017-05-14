@@ -19,11 +19,12 @@ class stock:
                  from_date = datetime.strftime(datetime.today() - timedelta(days = 365), '%Y-%m-%d'), 
                  to_date = datetime.strftime(datetime.today(), '%Y-%m-%d'),
                  source = 'yahoo'):
+				 
+		# Set up input variables
         self.scrip = scrip
         self.source = source
         self.from_date = datetime.strptime(from_date, '%Y-%m-%d')
         self.to_date = datetime.strptime(to_date, '%Y-%m-%d')
-        
         
         # Calling function to get the data
         self.data_matrix = {}
@@ -51,7 +52,6 @@ class stock:
         self.cdf = {}
         self.cdf['Simple_Returns'] = self.calc_cdf(self.data_matrix['returns_data']['Simple_Returns'])
         self.cdf['Log_Returns'] = self.calc_cdf(self.data_matrix['returns_data']['Log_Returns'])
-
         
     # -----------------------------------------------
     # Download the data
@@ -79,10 +79,10 @@ class stock:
     def calc_returns(self, inputData = None, columnName = None, lag = None):
         
         if lag == 0:
-            if min(inputData.index) == 1: #inputData.index[0]:
+            if min(inputData.index) == inputData.index[0]:
                 # Ascending
                 lag = 1
-            elif max(inputData.index) == 2: # inputData.index[0]:
+            elif max(inputData.index) == inputData.index[0]:
                 # Descending
                 lag = -1
             else:
@@ -122,10 +122,6 @@ class stock:
                 'kurtosis' : inputDataSeries.kurt()
         }
 
-
-
-    #ICICI = stock('ICICIBANK.BO', '2005-01-01', '2016-07-25', 'yahoo')
-
     # -----------------------------------------------
     # Function to get the kernel density estimate of 
     # distribution
@@ -135,40 +131,17 @@ class stock:
         if len(inputData) < 5:
             print("Please input atleast 5 data points")
             return
-        
-        # Get number of data points to be plotted
+			
         num_div = max(5, int(len(inputData)/10))
-        
-        # Generate the plot range
-        plot_range = numpy.linspace(max(inputData[columnName]), \
-                                    min(inputData[columnName]), \
-                                    num = num_div)
+		
         # Generating the kde function
         kde_function = kde(inputData[columnName])
         
-        # Plotting the KDE and histogram simultaneously
-        # ----------------------------------------------
-    
-        # Initializing the plot
-        fig, ax1 = plt.subplots()
-    
-        # Plot secondary y-axis
-        inputData[columnName].hist(bins = num_div)
-    
-    
-        # Create secondary y-axis
-        ax2 = ax1.twinx()
-        
-        # Plot the graph on primary x-axis
-        ax1.plot(plot_range, kde_function(plot_range), 'r-', \
-                 plot_range, kde_function(plot_range), 'ko')
-        
-    
-        # Labeling the axis
-        ax1.set_xlabel('Returns')
-        ax1.set_ylabel('KDE', color='g')
-        ax2.set_ylabel('Frequency', color='b')
-    
+		# Generate the plot range
+        plot_range = numpy.linspace(max(self.data_matrix['returns_data']['Simple_Returns']), \
+                                    min(self.data_matrix['returns_data']['Simple_Returns']), \
+                                    num = num_div)
+		
         return {'x_kde':plot_range, 'y_kde':kde_function}
 
 
@@ -192,42 +165,8 @@ class stock:
             print('Syntax: calc_returns(inputData, columnName, lag = lag_value)')
         
         n_iter = lag
-        columnName = outputData.columns[0]
-        i = 1
         
-        
-        # Calculate ACF
-        acf_values = []
-        acf_values.append(outputData[columnName].corr(outputData[columnName]))
-        
-        while i <= abs(n_iter):
-            col_name = 'lag_' + str(i)
-            outputData[col_name] = ''
-            outputData[col_name] = outputData[columnName].shift(multiplier*i)
-            
-            i += 1
-            
-            acf_values.append(outputData[columnName].corr(outputData[col_name]))
-        
-        # Define an emplty figure
-        fig = plt.figure()
-        
-        # Define 2 subplots
-        ax1 = fig.add_subplot(211) # 2 by 1 by 1 - 1st plot in 2 plots
-        ax2 = fig.add_subplot(212) # 2 by 1 by 2 - 2nd plot in 2 plots
-        
-        ax1.plot(range(len(acf_values)), acf(inputDataSeries, nlags = n_iter), \
-                 range(len(acf_values)), acf_values, 'ro')
-        ax2.plot(range(len(acf_values)), pacf(inputDataSeries, nlags = n_iter), 'g*-')
-        
-        # Plot horizontal lines    
-        ax1.axhline(y = 0.0, color = 'black')
-        ax2.axhline(y = 0.0, color = 'black')
-            
-        # Axis labels    
-        plt.xlabel = 'Lags'
-        plt.ylabel = 'Correlation Coefficient'
-        return {'acf' : list(acf_values), \
+        return {'acf' : acf(inputDataSeries, nlags = n_iter), \
                 'pacf': pacf(inputDataSeries, nlags = n_iter)} 
     
     # -----------------------------------------------    
@@ -245,11 +184,10 @@ class stock:
             cdf.append(i/n)
             i += 1
         
-        plt.plot(sortedData, cdf)    
         return pandas.DataFrame({'Return' : sortedData, 'CDF' : cdf})
 
-
-
+	
+        
 
 '''a = get_data(stock = 'ICICIBANK.BO', source = 'yahoo', \
              start = datetime.datetime(2005,01,01), \
@@ -268,6 +206,8 @@ plt.plot(b['2015':'2016']['Simple_Returns'])
 
 
 calc_cdf(b['2015':'2016']['Simple_Returns'])
+
+# ICICI = stock('ICICIBANK.BO', '2005-01-01', '2016-07-25', 'yahoo')
 '''
 
 
